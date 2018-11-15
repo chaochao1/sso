@@ -11,6 +11,18 @@ import (
 
 var Config *config
 
+type data struct {
+	Micro	*micro		`json:"micro"`
+}
+
+type micro struct {
+	Conf		*conf	`json:"config"`
+}
+
+type conf struct {
+	Config 		*config	`json:"sso"`
+}
+
 type config struct {
 	Name        string 	`json:"name"`
 	HttpPort    string 	`json:"http-port"`
@@ -56,7 +68,9 @@ func init() {
 	if err != nil {
 		log.Log(err)
 	}
-	json.Unmarshal(ChangeSet.Data, &Config)
+	var d data
+	json.Unmarshal(ChangeSet.Data, &d)
+	Config = d.Micro.Conf.Config
 }
 
 func (db *Db) GetEngin() (engine *xorm.Engine, err error) {

@@ -6,6 +6,8 @@ import (
 	"github.com/kataras/iris/core/errors"
 	"github.com/go-redis/redis"
 	"time"
+	"github.com/go-log/log"
+	"github.com/google/uuid"
 )
 
 //customizeRdsStore An object implementing Store interface
@@ -25,12 +27,15 @@ func (s *customizeRdsStore) Set(id string, value string) {
 func (s *customizeRdsStore) Get(id string, clear bool) (value string) {
 	val, err := s.redisClient.Get(id).Result()
 	if err != nil {
-		panic(err)
+		log.Log(err)
+		//生成随机串阻止验证
+		u := uuid.New()
+		val = u.String()
 	}
 	if clear {
 		err := s.redisClient.Del(id).Err()
 		if err != nil {
-			panic(err)
+			log.Log(err)
 		}
 	}
 	return val
