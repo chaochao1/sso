@@ -12,7 +12,7 @@ import (
 type Sso struct{}
 
 // Call is a single request handler called via client.Auth or the generated client code
-func (e *Sso) Auth(ctx context.Context, req *sso.AuthRequest, rsp *sso.AuthResponse) error {
+func (e *Sso) Token(ctx context.Context, req *sso.AuthRequest, rsp *sso.AuthResponse) error {
 	u := models.User{
 		Username: req.Username,
 	}
@@ -31,7 +31,7 @@ func (e *Sso) Auth(ctx context.Context, req *sso.AuthRequest, rsp *sso.AuthRespo
 
 // Call is a single request handler called via client.Register or the generated client code
 func (e *Sso) Register(ctx context.Context, req *sso.RegisterRequest, rsp *sso.RegisterResponse) error {
-	if !utils.VerfiyCaptcha(req.CaptchaId, req.Verify) {
+	if !utils.CaptchaVerify(req.CaptchaId, req.Verify) {
 		return errors.New("验证码验证失败")
 	}
 	if req.Username == "" {
@@ -51,7 +51,7 @@ func (e *Sso) Register(ctx context.Context, req *sso.RegisterRequest, rsp *sso.R
 }
 
 func (e * Sso) Captcha(ctx context.Context, req *sso.CaptchaRequest, rsp *sso.CaptchaResponse) error {
-	id, data, err := utils.GenerateCaptcha(req.Type, req.Length)
+	id, data, err := utils.CaptchaGenerate(req.Type, req.Length)
 	if err != nil {
 		return err
 	}

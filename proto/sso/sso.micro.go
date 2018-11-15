@@ -51,7 +51,7 @@ var _ server.Option
 // Client API for Sso service
 
 type SsoService interface {
-	Auth(ctx context.Context, in *AuthRequest, opts ...client.CallOption) (*AuthResponse, error)
+	Token(ctx context.Context, in *AuthRequest, opts ...client.CallOption) (*AuthResponse, error)
 	Register(ctx context.Context, in *RegisterRequest, opts ...client.CallOption) (*RegisterResponse, error)
 	Captcha(ctx context.Context, in *CaptchaRequest, opts ...client.CallOption) (*CaptchaResponse, error)
 	Stream(ctx context.Context, in *StreamingRequest, opts ...client.CallOption) (Sso_StreamService, error)
@@ -76,8 +76,8 @@ func NewSsoService(name string, c client.Client) SsoService {
 	}
 }
 
-func (c *ssoService) Auth(ctx context.Context, in *AuthRequest, opts ...client.CallOption) (*AuthResponse, error) {
-	req := c.c.NewRequest(c.name, "Sso.Auth", in)
+func (c *ssoService) Token(ctx context.Context, in *AuthRequest, opts ...client.CallOption) (*AuthResponse, error) {
+	req := c.c.NewRequest(c.name, "Sso.Token", in)
 	out := new(AuthResponse)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
@@ -199,7 +199,7 @@ func (x *ssoServicePingPong) Recv() (*Pong, error) {
 // Server API for Sso service
 
 type SsoHandler interface {
-	Auth(context.Context, *AuthRequest, *AuthResponse) error
+	Token(context.Context, *AuthRequest, *AuthResponse) error
 	Register(context.Context, *RegisterRequest, *RegisterResponse) error
 	Captcha(context.Context, *CaptchaRequest, *CaptchaResponse) error
 	Stream(context.Context, *StreamingRequest, Sso_StreamStream) error
@@ -208,7 +208,7 @@ type SsoHandler interface {
 
 func RegisterSsoHandler(s server.Server, hdlr SsoHandler, opts ...server.HandlerOption) error {
 	type sso interface {
-		Auth(ctx context.Context, in *AuthRequest, out *AuthResponse) error
+		Token(ctx context.Context, in *AuthRequest, out *AuthResponse) error
 		Register(ctx context.Context, in *RegisterRequest, out *RegisterResponse) error
 		Captcha(ctx context.Context, in *CaptchaRequest, out *CaptchaResponse) error
 		Stream(ctx context.Context, stream server.Stream) error
@@ -225,8 +225,8 @@ type ssoHandler struct {
 	SsoHandler
 }
 
-func (h *ssoHandler) Auth(ctx context.Context, in *AuthRequest, out *AuthResponse) error {
-	return h.SsoHandler.Auth(ctx, in, out)
+func (h *ssoHandler) Token(ctx context.Context, in *AuthRequest, out *AuthResponse) error {
+	return h.SsoHandler.Token(ctx, in, out)
 }
 
 func (h *ssoHandler) Register(ctx context.Context, in *RegisterRequest, out *RegisterResponse) error {

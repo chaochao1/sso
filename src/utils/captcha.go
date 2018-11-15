@@ -4,10 +4,54 @@ import (
 	"github.com/mojocn/base64Captcha"
 	"fmt"
 	"github.com/kataras/iris/core/errors"
+	"github.com/go-redis/redis"
+	"time"
 )
 
+//customizeRdsStore An object implementing Store interface
+type customizeRdsStore struct {
+	redisClient *redis.Client
+}
+
+// customizeRdsStore implementing Set method of  Store interface
+func (s *customizeRdsStore) Set(id string, value string) {
+	err := s.redisClient.Set(id, value, time.Minute*10).Err()
+	if err != nil {
+		panic(err)
+	}
+}
+
+// customizeRdsStore implementing Get method of  Store interface
+func (s *customizeRdsStore) Get(id string, clear bool) (value string) {
+	val, err := s.redisClient.Get(id).Result()
+	if err != nil {
+		panic(err)
+	}
+	if clear {
+		err := s.redisClient.Del(id).Err()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return val
+}
+
+func init() {
+	//create redis client
+	client := redis.NewClient(&redis.Options{
+		Addr:     "127.0.0.1:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+	//init redis store
+	customeStore := customizeRdsStore{client}
+
+	base64Captcha.SetCustomStore(&customeStore)
+
+}
+
 // 生成验证码
-func GenerateCaptcha(captchaType string, captchaLen int64) (idKey, data string, err error) {
+func CaptchaGenerate(captchaType string, captchaLen int64) (idKey, data string, err error) {
 	//config struct for digits
 	//数字验证码配置
 	var configD = base64Captcha.ConfigDigit{
@@ -69,6 +113,6 @@ func GenerateCaptcha(captchaType string, captchaLen int64) (idKey, data string, 
 }
 
 // 校验验证码
-func VerfiyCaptcha(idkey, verifyValue string) bool {
+func CaptchaVerify(idkey, verifyValue string) bool {
 	return base64Captcha.VerifyCaptcha(idkey, verifyValue)
 }

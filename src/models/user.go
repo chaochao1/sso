@@ -2,7 +2,6 @@ package models
 
 import (
 	"github.com/cicdi-go/sso/src/utils"
-	"log"
 	"time"
 	"github.com/cicdi-go/jwt"
 )
@@ -26,17 +25,17 @@ func (u *User) TableName() string {
 	return utils.Config.TablePrefix + "user"
 }
 
-func init() {
-	u := new(User)
-	if e, err := u.GetDb(); err != nil {
-		log.Println(err)
-	} else {
-		err := e.Sync2(u)
-		if err != nil {
-			log.Println(err)
-		}
-	}
-}
+//func init() {
+//	u := new(User)
+//	if e, err := u.GetDb(); err != nil {
+//		log.Println(err)
+//	} else {
+//		err := e.Sync2(u)
+//		if err != nil {
+//			log.Println(err)
+//		}
+//	}
+//}
 
 func (u *User) Insert() (err error) {
 	engine, err := u.GetDb()

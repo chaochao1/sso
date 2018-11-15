@@ -2,32 +2,32 @@ package utils
 
 import (
 	"github.com/xormplus/xorm"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"log"
 	"os"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/micro/go-config/source/consul"
+	"github.com/micro/go-log"
+	"encoding/json"
 )
 
 var Config *config
 
 type config struct {
-	Name        string 	`yaml:"name"`
-	HttpPort    string 	`yaml:"http-port"`
-	TablePrefix string 	`yaml:"table-prefix"`
-	Db          []Db   	`yaml:"db"`
-	SecretKey	string 	`yaml:"secret-key"`
-	Expire		int64 	`yaml:"expire"`
+	Name        string 	`json:"name"`
+	HttpPort    string 	`json:"http-port"`
+	TablePrefix string 	`json:"table-prefix"`
+	Db          []Db   	`json:"db"`
+	SecretKey	string 	`json:"secret-key"`
+	Expire		int64 	`json:"expire"`
 }
 
 type Db struct {
-	Name         string `yaml:"name"`
-	Driver       string `yaml:"driver"`
-	Dsn          string `yaml:"dsn"`
-	Log          string `yaml:"log"`
-	MaxIdleConns int    `yaml:"max-idle-conns"`
-	MaxOpenConns int    `yaml:"max-open-conns"`
-	ShowSql      bool   `yaml:"show-sql"`
+	Name         string `json:"name"`
+	Driver       string `json:"driver"`
+	Dsn          string `json:"dsn"`
+	Log          string `json:"log"`
+	MaxIdleConns int    `json:"max-idle-conns"`
+	MaxOpenConns int    `json:"max-open-conns"`
+	ShowSql      bool   `json:"show-sql"`
 }
 
 func NewConfig() *config {
@@ -35,15 +35,28 @@ func NewConfig() *config {
 }
 
 func init() {
-	Config = NewConfig()
-	file, err := ioutil.ReadFile("config/app.yaml")
+	//Config = NewConfig()
+	//file, err := ioutil.ReadFile("config/app.yaml")
+	//if err != nil {
+	//	log.Fatalf("config.Get err   #%v ", err)
+	//}
+	//err = yaml.Unmarshal(file, &Config)
+	//if err != nil {
+	//	log.Fatalf("Unmarshal: %v", err)
+	//}
+	consulSource := consul.NewSource(
+		// optionally specify consul address; default to localhost:8500
+		consul.WithAddress("localhost:8500"),
+		// optionally specify prefix; defaults to /micro/config
+		consul.WithPrefix("/micro/config/sso"),
+		// optionally strip the provided prefix from the keys, defaults to false
+		consul.StripPrefix(true),
+	)
+	ChangeSet, err := consulSource.Read()
 	if err != nil {
-		log.Fatalf("config.Get err   #%v ", err)
+		log.Log(err)
 	}
-	err = yaml.Unmarshal(file, &Config)
-	if err != nil {
-		log.Fatalf("Unmarshal: %v", err)
-	}
+	json.Unmarshal(ChangeSet.Data, &Config)
 }
 
 func (db *Db) GetEngin() (engine *xorm.Engine, err error) {

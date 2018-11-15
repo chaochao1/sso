@@ -3,7 +3,7 @@ syntax = "proto3";
 package go.micro.srv.sso;
 
 service Sso {
-	rpc Auth(AuthRequest) returns (AuthResponse) {}
+	rpc Token(AuthRequest) returns (AuthResponse) {}
 	rpc Register(RegisterRequest) returns (RegisterResponse) {}
 	rpc Captcha(CaptchaRequest) returns (CaptchaResponse) {}
 	rpc Stream(StreamingRequest) returns (stream StreamingResponse) {}
