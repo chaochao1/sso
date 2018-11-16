@@ -41,17 +41,13 @@ func (s *customizeRdsStore) Get(id string, clear bool) (value string) {
 	return val
 }
 
-func init() {
+func initCaptcha() {
 	//create redis client
-	client := redis.NewClient(&redis.Options{
-		Addr:     "127.0.0.1:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-	//init redis store
-	customeStore := customizeRdsStore{client}
-
-	base64Captcha.SetCustomStore(&customeStore)
+	if client, found := RedisClient.Get("captcha"); found {
+		//init redis store
+		customeStore := customizeRdsStore{client}
+		base64Captcha.SetCustomStore(&customeStore)
+	}
 
 }
 
@@ -69,7 +65,7 @@ func CaptchaGenerate(captchaType string, captchaLen int64) (idKey, data string, 
 	//config struct for audio
 	//声音验证码配置
 	var configA = base64Captcha.ConfigAudio{
-		CaptchaLen: int(captchaLen),
+		CaptchaLen: 1,
 		Language:   "zh",
 	}
 	//config struct for Character
@@ -93,23 +89,23 @@ func CaptchaGenerate(captchaType string, captchaLen int64) (idKey, data string, 
 	case "digits":
 		//创建数字验证码.
 		//GenerateCaptcha 第一个参数为空字符串,包会自动在服务器一个随机种子给你产生随机uiid.
-		id, cap := base64Captcha.GenerateCaptcha("", configD)
+		id, captcha := base64Captcha.GenerateCaptcha("", configD)
 		//以base64编码
-		data = base64Captcha.CaptchaWriteToBase64Encoding(cap)
+		data = base64Captcha.CaptchaWriteToBase64Encoding(captcha)
 		idKey = id
 	case "audio":
 		//创建声音验证码
 		//GenerateCaptcha 第一个参数为空字符串,包会自动在服务器一个随机种子给你产生随机uiid.
-		id, cap := base64Captcha.GenerateCaptcha("", configA)
+		id, captcha := base64Captcha.GenerateCaptcha("", configA)
 		//以base64编码
-		data = base64Captcha.CaptchaWriteToBase64Encoding(cap)
+		data = base64Captcha.CaptchaWriteToBase64Encoding(captcha)
 		idKey = id
 	case "character":
 		//创建字符公式验证码.
 		//GenerateCaptcha 第一个参数为空字符串,包会自动在服务器一个随机种子给你产生随机uiid.
-		id, cap := base64Captcha.GenerateCaptcha("", configC)
+		id, captcha := base64Captcha.GenerateCaptcha("", configC)
 		//以base64编码
-		data = base64Captcha.CaptchaWriteToBase64Encoding(cap)
+		data = base64Captcha.CaptchaWriteToBase64Encoding(captcha)
 		idKey = id
 	default:
 		err = errors.New(fmt.Sprintf("Unsupported type of %s", captchaType))

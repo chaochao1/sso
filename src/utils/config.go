@@ -7,27 +7,17 @@ import (
 	"github.com/micro/go-config/source/consul"
 	"github.com/micro/go-log"
 	"encoding/json"
+	"github.com/go-redis/redis"
 )
 
 var Config *config
-
-type data struct {
-	Micro	*micro		`json:"micro"`
-}
-
-type micro struct {
-	Conf		*conf	`json:"config"`
-}
-
-type conf struct {
-	Config 		*config	`json:"sso"`
-}
 
 type config struct {
 	Name        string 	`json:"name"`
 	HttpPort    string 	`json:"http-port"`
 	TablePrefix string 	`json:"table-prefix"`
 	Db          []Db   	`json:"db"`
+	Redis 		[]Redis `json:"redis"`
 	SecretKey	string 	`json:"secret-key"`
 	Expire		int64 	`json:"expire"`
 }
@@ -40,6 +30,13 @@ type Db struct {
 	MaxIdleConns int    `json:"max-idle-conns"`
 	MaxOpenConns int    `json:"max-open-conns"`
 	ShowSql      bool   `json:"show-sql"`
+}
+
+type Redis struct {
+	Name 		string	`json:"name"`
+	Addr 		string	`json:"addr"`
+	Password 	string	`json:"password"`
+	Db 			int		`json:"db"`
 }
 
 func NewConfig() *config {
@@ -66,11 +63,27 @@ func init() {
 	)
 	ChangeSet, err := consulSource.Read()
 	if err != nil {
-		log.Log(err)
+		log.Fatal(err)
 	}
-	var d data
-	json.Unmarshal(ChangeSet.Data, &d)
-	Config = d.Micro.Conf.Config
+	if ChangeSet == nil {
+		log.Fatal("/micro/config/sso is nil")
+	}
+	var data map[string]map[string]map[string]*config
+	if err := json.Unmarshal(ChangeSet.Data, &data); err != nil {
+		log.Fatal(err)
+	}
+	if data["micro"]["config"]["sso"] != nil {
+		Config = data["micro"]["config"]["sso"]
+	}
+
+	// 加载mysql数据库连接
+	initOrm()
+
+	// 加载redis数据库连接
+	initRedis()
+
+	// 加载验证码配置
+	initCaptcha()
 }
 
 func (db *Db) GetEngin() (engine *xorm.Engine, err error) {
@@ -94,4 +107,13 @@ func (db *Db) GetEngin() (engine *xorm.Engine, err error) {
 		engine.SetMaxOpenConns(db.MaxOpenConns)
 	}
 	return
+}
+
+func (r *Redis) GetClient() (client *redis.Client, err error) {
+	client = redis.NewClient(&redis.Options{
+		Addr: r.Addr,
+		Password: r.Password, // no password set
+		DB: r.Db,  // use default DB
+	})
+	return client, nil
 }

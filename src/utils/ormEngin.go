@@ -24,7 +24,7 @@ type xormEngin struct {
 	items map[string]*xorm.Engine
 }
 
-func init() {
+func initOrm() {
 	Engin = NewXormPool()
 	for _, db := range Config.Db {
 		engine, err := db.GetEngin()
